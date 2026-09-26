@@ -1,0 +1,11 @@
+numpy
+pandas
+rasterio
+shapely
+scikit-learn
+matplotlib
+requests
+tqdm
+tabulate
+torch
+segmentation-models-pytorch
