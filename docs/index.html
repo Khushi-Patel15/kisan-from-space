@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Kisan from Space</title>
+  <meta name="description" content="AI crop maps of small Indian farms from Sentinel-2 satellite images.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="map" aria-label="Map"></div>
+
+  <aside class="panel" id="panel">
+    <header class="brand">
+      <h1>Kisan from Space</h1>
+      <p>AI crop maps of small Indian farms, from Sentinel-2</p>
+    </header>
+
+    <div class="search" role="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.3 4.3-1.4 1.4-4.3-4.3A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg>
+      <input id="search" type="search" autocomplete="off" spellcheck="false"
+             placeholder="Search a village, district or lat, lon" aria-label="Search for a place" aria-controls="suggest">
+      <ul id="suggest" class="suggest" role="listbox" hidden></ul>
+    </div>
+
+    <nav class="tabs" role="tablist">
+      <button role="tab" id="tab-areas" aria-selected="true" data-tab="areas">Crop maps</button>
+      <button role="tab" id="tab-game" aria-selected="false" data-tab="game">Beat the AI</button>
+      <button role="tab" id="tab-about" aria-selected="false" data-tab="about">Accuracy</button>
+    </nav>
+
+    <section class="tabpane" id="pane-areas">
+      <div id="area-detail"></div>
+      <h3 class="label">Mapped areas</h3>
+      <ul class="area-list" id="area-list"></ul>
+        <label class="check"><input type="checkbox" id="show-coverage" checked> Show training tiles and surveyed farms</label>
+      <p class="fine">Zoom in close to see the real surveyed farms, filled with the crop the farmer reported. <b>White outline</b>: the AI got it right. <b style="color:#D8342A">Red dashed outline</b>: the AI got it wrong. Click a farm to compare.</p>
+      <p class="fine">The model has only learned from surveyed farms in four states, photographed between March and May 2022. It can be run for any area within about 50 km of the green dots.</p>
+    </section>
+
+    <section class="tabpane" id="pane-game" hidden>
+      <p class="lead">Each picture is one real farm field (outlined in white) from our test set, one the AI never saw while learning. Can you name the crop?</p>
+      <div class="score">
+        <div><span>You</span><b id="s-you">0 / 0</b></div>
+        <div><span>AI</span><b id="s-ai">0 / 0</b></div>
+      </div>
+      <img id="game-img" class="game-img" alt="Satellite close-up of one field" width="192" height="192">
+      <p class="fine" id="game-meta"></p>
+      <div class="choices" id="choices"></div>
+      <p class="result" id="result" aria-live="polite"></p>
+      <button class="primary" id="next">Next field</button>
+    </section>
+
+    <section class="tabpane" id="pane-about" hidden>
+      <div id="metrics"></div>
+      <h3 class="label">Read the maps with care</h3>
+      <ul class="caveats">
+        <li><b>A prediction, not a survey.</b> On test fields the AI names the right crop roughly half the time; it is best at wheat, maize, sugarcane and fallow.</li>
+        <li><b>Late-season images.</b> The training photos were taken 20 March to 29 May 2022, when many crops were already harvested. Mustard and other early crops are easy to miss.</li>
+        <li><b>Regional bias.</b> Each state was photographed on a different date and grows different crops, so the model partly learns the region's usual crops.</li>
+        <li><b>10 m pixels, tiny fields.</b> Half the surveyed fields are smaller than 0.25 ha (25 pixels), so field edges blur together.</li>
+      </ul>
+      <h3 class="label">Data</h3>
+      <p class="fine">Crop labels: AgriFieldNet India (Radiant Earth, IDinsight, CC BY 4.0). Images: Copernicus Sentinel-2 via Earth Search (AWS). Cropland mask: ESA WorldCover 2021. Basemap: Esri World Imagery, OpenStreetMap. Search: Photon by Komoot.</p>
+    </section>
+  </aside>
+
+  <div class="mapbar" id="mapbar">
+    <div class="seg" role="group" aria-label="Base map">
+      <button data-base="sat" aria-pressed="true">Satellite</button>
+      <button data-base="map" aria-pressed="false">Map</button>
+    </div>
+    <div class="seg" role="group" aria-label="AI layer">
+      <button data-layer="crops" aria-pressed="true">AI crops</button>
+      <button data-layer="s2" aria-pressed="false">Image the AI saw</button>
+      <button data-layer="off" aria-pressed="false">Off</button>
+    </div>
+    <label class="slider">Opacity <input type="range" id="opacity" min="0.2" max="1" step="0.05" value="0.8"></label>
+    <label class="slider">Hide below <span id="conf-val">0</span>% sure <input type="range" id="minconf" min="0" max="90" step="5" value="0"></label>
+  </div>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
